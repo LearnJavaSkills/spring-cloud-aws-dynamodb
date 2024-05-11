@@ -6,12 +6,15 @@ import io.awspring.cloud.dynamodb.DynamoDbTemplate;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.NestedAttributeName;
 import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -104,7 +107,8 @@ public class MovieService
         QueryConditional queryConditional = QueryConditional.keyEqualTo(key);
 
         QueryEnhancedRequest queryEnhancedRequest = QueryEnhancedRequest.builder()
-                .queryConditional(queryConditional).build();
+                .queryConditional(queryConditional)
+                .build();
 
         PageIterable<Movie> moviePageIterable = dynamoDbTemplate.query(queryEnhancedRequest, Movie.class);
         return  moviePageIterable;
@@ -152,8 +156,8 @@ public class MovieService
                 .build();
 
         QueryEnhancedRequest queryEnhancedRequest = QueryEnhancedRequest.builder()
-                .queryConditional(queryConditional)
-                .filterExpression(expression)
+                .queryConditional(queryConditional) // query-condition with partition-key
+                .filterExpression(expression) // filter-expression
                 .build();
 
         PageIterable<Movie> moviePageIterable = dynamoDbTemplate.query(queryEnhancedRequest, Movie.class);
@@ -161,20 +165,98 @@ public class MovieService
     }
 
     /**
+     *
+     * @param genreContain
+     * @return
+     */
+    public PageIterable<Movie> findMovieTitle(String genreContain, Long movieId) {
+
+        // it's mandatory to use the key with the filter expression
+        Key key = Key.builder().partitionValue(movieId).build();
+        QueryConditional queryConditional = QueryConditional.keyEqualTo(key);
+
+        // filter expression, finding only those movie which genre's contain genreContain
+        Expression expression = Expression.builder()
+                .expression("contains(genre, :genre_contain_value)")
+                .putExpressionValue(":genre_contain_value", AttributeValue.fromS(genreContain))
+                .build();
+
+        // Selecting only movie_id and movie title attributes only.
+        List<NestedAttributeName> nestedAttributeNameList = new ArrayList<>();
+
+        nestedAttributeNameList.add(NestedAttributeName.builder()
+                .elements("movie_id")
+                .build());
+
+        nestedAttributeNameList.add(NestedAttributeName.builder()
+                .elements("movie_title")
+                .build());
+
+        QueryEnhancedRequest queryEnhancedRequest = QueryEnhancedRequest.builder()
+                .queryConditional(queryConditional)
+                .filterExpression(expression) // filter-expression
+                .addNestedAttributesToProject(nestedAttributeNameList) // projection-expression
+                .build();
+
+        PageIterable<Movie> moviePageIterable = dynamoDbTemplate.query(queryEnhancedRequest, Movie.class);
+        return moviePageIterable;
+    }
+
+    /**
+     * Scan whole table and return all the data
+     * @return
+     */
+    public PageIterable<Movie> scanMovieTable() {
+        PageIterable<Movie> moviePageIterable = dynamoDbTemplate.scanAll(Movie.class);
+        return moviePageIterable;
+    }
+
+    /**
      * Scan entire table with filter condition on  movie title begin with
      * @param movieTitleBeginWith
      */
-    public PageIterable<Movie> scanMovieTable(String movieTitleBeginWith) {
+    public PageIterable<Movie> scanMovieTableWithFilterExpression(String movieTitleBeginWith) {
 
+        // Filter expression is nothing but, It's just like a where clause of SQL. Here we are only selecting whose
+        // movie_title begin with the given-movie-title(movieTitleBeginWith) like a LIKE operation of SQL.
         Expression expression = Expression.builder()
                 .expression("begins_with(movie_title, :movie_title)")
                 .putExpressionValue(":movie_title", AttributeValue.fromS(movieTitleBeginWith))
                 .build();
 
-        ScanEnhancedRequest scanEnhancedRequest = ScanEnhancedRequest
-                .builder()
-                .filterExpression(expression)
+        ScanEnhancedRequest scanEnhancedRequest = ScanEnhancedRequest.builder()
+                .filterExpression(expression) // filter-expression
                 .build();
+        PageIterable<Movie> scan = dynamoDbTemplate.scan(scanEnhancedRequest, Movie.class);
+        return scan;
+    }
+
+
+    /**
+     * Scan movie table to retrieve only selected attributes from dynamoDB
+     * @return PageIterable<Movie>
+     */
+    public PageIterable<Movie> scanMovieTableWithProjectionExpression() {
+
+        // ProjectionExpression, If we want to select only selected attributes from the dynamoDB then we can utilize
+        // the projection expression, Since we are using the Spring cloud AWS, we can utilize the NestedAttributeName
+        // to set the desire attributes name just like below.
+        List<NestedAttributeName> nestedAttributeNameList = new ArrayList<>();
+
+        // retrieve characters attribute in a result
+        nestedAttributeNameList.add(NestedAttributeName.builder()
+                .elements("characters")
+                .build());
+
+        // data type of attribute directors is a map, here we are only selecting key = dir2 from the directors attribute.
+        nestedAttributeNameList.add(NestedAttributeName.builder()
+                .elements("directors", "Dir2")
+                .build());
+
+        ScanEnhancedRequest scanEnhancedRequest = ScanEnhancedRequest.builder()
+                .addNestedAttributesToProject(nestedAttributeNameList) // projection-expression
+                .build();
+
         PageIterable<Movie> scan = dynamoDbTemplate.scan(scanEnhancedRequest, Movie.class);
         return scan;
     }

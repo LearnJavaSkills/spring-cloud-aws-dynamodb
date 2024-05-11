@@ -5,8 +5,6 @@ import in.learnjavaskills.springcloudawsdynamodb.document.Movie;
 import in.learnjavaskills.springcloudawsdynamodb.service.MovieService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
@@ -110,16 +108,50 @@ class SpringCloudAwsDynamodbApplicationTests {
 		if (Objects.nonNull(movieByQuery))
 		{
 			SdkIterable<Movie> items = movieByQuery.items();
-			System.out.println("count " + items.stream().count()) ;
 			if (Objects.nonNull(items))
 				items.forEach(System.out :: println);
 		}
 	}
 
 	@Test
-	public void scanTable()
+	void findMovieTitle()
 	{
-		PageIterable<Movie> moviePageIterable = movieService.scanMovieTable("Har");
+		PageIterable<Movie> movieByQuery = movieService.findMovieTitle("DRA", 101L);
+		if (Objects.nonNull(movieByQuery))
+		{
+			SdkIterable<Movie> items = movieByQuery.items();
+			if (Objects.nonNull(items))
+				items.forEach(System.out :: println);
+		}
+	}
+
+	@Test
+	void scanTable()
+	{
+		PageIterable<Movie> moviePageIterable = movieService.scanMovieTable();
+		if (Objects.nonNull(moviePageIterable))
+		{
+			SdkIterable<Movie> items = moviePageIterable.items();
+			if (Objects.nonNull(items))
+				items.forEach(System.out :: println);
+		}
+	}
+
+	@Test
+	public void scanTableWithFilterExpression()
+	{
+		PageIterable<Movie> moviePageIterable = movieService.scanMovieTableWithFilterExpression("Har");
+		if (Objects.nonNull(moviePageIterable))
+		{
+			SdkIterable<Movie> items = moviePageIterable.items();
+			if (Objects.nonNull(items))
+				items.forEach(System.out :: println);
+		}
+	}
+
+	@Test
+	void scanTableAndRetrieveOnlyCharactersAndDirectorAttribute() {
+		PageIterable<Movie> moviePageIterable = movieService.scanMovieTableWithProjectionExpression();
 		if (Objects.nonNull(moviePageIterable))
 		{
 			SdkIterable<Movie> items = moviePageIterable.items();
