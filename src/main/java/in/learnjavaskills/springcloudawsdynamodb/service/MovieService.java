@@ -4,6 +4,7 @@ import in.learnjavaskills.springcloudawsdynamodb.document.Movie;
 import in.learnjavaskills.springcloudawsdynamodb.exception.DynamoDbDataException;
 import io.awspring.cloud.dynamodb.DynamoDbTemplate;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.NestedAttributeName;
@@ -11,7 +12,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -260,4 +261,6 @@ public class MovieService
         PageIterable<Movie> scan = dynamoDbTemplate.scan(scanEnhancedRequest, Movie.class);
         return scan;
     }
+
+
 }
