@@ -1,4 +1,4 @@
-package in.learnjavaskills.springcloudawsdynamodb;
+package in.learnjavaskills.springcloudawsdynamodb.service;
 
 import in.learnjavaskills.springcloudawsdynamodb.document.Genres;
 import in.learnjavaskills.springcloudawsdynamodb.document.Movie;

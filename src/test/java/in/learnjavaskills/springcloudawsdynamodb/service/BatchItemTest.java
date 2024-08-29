@@ -1,4 +1,4 @@
-package in.learnjavaskills.springcloudawsdynamodb;
+package in.learnjavaskills.springcloudawsdynamodb.service;
 
 import in.learnjavaskills.springcloudawsdynamodb.service.BatchItemExample;
 import org.junit.jupiter.api.Test;
